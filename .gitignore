@@ -20,3 +20,4 @@ venv/
 dashboard/
 utils/
 tests/
+*.backup

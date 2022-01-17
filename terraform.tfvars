@@ -3,7 +3,9 @@
 #======================================================================================
 
 # Provider's URI #
-libvirt_provider_uri = "qemu:///system"
+libvirt_provider_vm_host1_uri = "qemu+ssh://192.168.101.50/system?keyfile=/home/jamie/.ssh/id_ed25519"
+
+libvirt_provider_vm_host2_uri = "qemu+ssh://192.168.101.55/system?keyfile=/home/jamie/.ssh/id_ed25519"
 
 # Location where resource pool will be initialized #
 libvirt_resource_pool_location = "/var/lib/libvirt/pools/"
@@ -26,7 +28,7 @@ vm_ssh_known_hosts = true
 vm_distro = "ubuntu"
 
 # Source of linux image. It can be path to an image on host's filesystem or an URL #
-vm_image_source = "https://cloud-images.ubuntu.com/releases/focal/release-20220111/ubuntu-20.04-server-cloudimg-amd64.img"
+vm_image_source = "http://192.168.104.1:8000/ubuntu-20.04-server-cloudimg-amd64.img"
 
 # The prefix added to names of VMs #
 vm_name_prefix = "k8s"
@@ -42,19 +44,19 @@ vm_update = false
 #======================================================================================
 
 # Network mode (nat, route, bridge) #
-network_mode = "nat"
+network_mode = "bridge"
 
-# Network CIDR (example: 192.168.113.0/24) #
-network_cidr = "192.168.113.0/24"
+# Network CIDR (example: 192.168.104.0/24) #
+network_cidr = "192.168.104.0/24"
 
 # Network (virtual) bridge #
 # Note: For network mode 'bridge', bridge on host needs to preconfigured (example: br0) #
-network_bridge = "virbr1"
+network_bridge = "fastbr"
 
-# Network gateway (example: 192.168.113.1) #
+# Network gateway (example: 192.168.104.1) #
 # Note: If not provided, it will be calculated as first host in network CIDR. #
-#       +-> first host of 192.168.113.0/24 is 192.168.113.1 #
-#network_gateway = "192.168.113.1"
+#       +-> first host of 192.168.104.0/24 is 192.168.104.1 #
+network_gateway = "192.168.104.1"
 
 # Network DNS list (if empty, network gateway is set as a DNS) #
 network_dns_list = [
@@ -76,23 +78,27 @@ lb_default_ram = 2
 lb_default_storage = 16
 
 # HAProxy internal load balancer (iLB) nodes configuration #
-lb_nodes = [
+lb_nodes_vm_host1 = [
   {
     id  = 1
-    ip  = "192.168.113.5"
+    ip  = "192.168.104.5"
     mac = "52:54:00:00:00:05"
-  },
+    host = "host1"
+  }
+]
+lb_nodes_vm_host2 = [
   {
     id  = 2
-    ip  = "192.168.113.6"
+    ip  = "192.168.104.6"
     mac = "52:54:00:00:00:06"
+    host = "host1"
   }
 ]
 
 # Virtual/Floating IP address. #
 # Note: Floating IP only applies if at least one load balancer is defined, #
 # otherwise IP of the first master node will be used as control plane endpoint. #
-lb_vip = "192.168.113.200"
+lb_vip = "192.168.104.200"
 
 
 #======================================================================================
@@ -110,24 +116,26 @@ master_default_storage = 16
 
 # Master nodes configuration #
 # Note that number of masters cannot be divisible by 2. #
-master_nodes = [
+master_nodes_vm_host1 = [
   {
     id  = 1
-    ip  = "192.168.113.10"
+    ip  = "192.168.104.10"
     mac = "52:54:00:00:00:10"
-  },
+  }
+]
+
+master_nodes_vm_host2 = [
   {
     id  = 2
-    ip  = "192.168.113.11"
+    ip  = "192.168.104.11"
     mac = "52:54:00:00:00:11"
   },
   {
     id  = 3
-    ip  = "192.168.113.12"
+    ip  = "192.168.104.12"
     mac = "52:54:00:00:00:12"
-  }
+  },
 ]
-
 
 #======================================================================================
 # Worker node VMs parameters
@@ -147,27 +155,45 @@ worker_default_storage = 32
 worker_node_label = "node"
 
 # Worker nodes configuration #
-worker_nodes = [
+worker_nodes_vm_host1 = [
   {
     id  = 1
-    ip  = "192.168.113.100"
+    ip  = "192.168.104.100"
     mac = "52:54:00:00:00:40"
-  },
-  {
-    # Example of optional MAC address
-    id  = 2
-    ip  = "192.168.113.101"
-    mac = null
-  },
-  {
-    # Example of optional IP and MAC addresses
-    id  = 3
-    ip  = null
-    mac = null
   }
+#  {
+#    # Example of optional MAC address
+#    id  = 2
+#    ip  = "192.168.104.101"
+#    mac = null
+#  },
+#  {
+#    # Example of optional IP and MAC addresses
+#    id  = 3
+#    ip  = "192.168.104.102"
+#    mac = null
+#  }
 ]
 
-
+worker_nodes_vm_host2 = [
+  {
+    id  = 2
+    ip  = "192.168.104.101"
+    mac = "52:54:00:00:00:41"
+  }
+#  {
+#    # Example of optional MAC address
+#    id  = 2
+#    ip  = "192.168.104.101"
+#    mac = null
+#  },
+#  {
+#    # Example of optional IP and MAC addresses
+#    id  = 3
+#    ip  = "192.168.104.102"
+#    mac = null
+#  }
+]
 #======================================================================================
 # General Kubernetes configuration
 #======================================================================================
@@ -266,13 +292,13 @@ metallb_port      = 7472
 metallb_protocol = "layer2"
 
 # IP range for services of type LoadBalancer #
-metallb_ip_range = "192.168.113.241-192.168.113.254"
+metallb_ip_range = "192.168.104.241-192.168.104.254"
 
 # MetalLB peers #
 # Note: This variable will be applied only in 'bgp' mode #
 metallb_peers = [
   {
-    peer_ip  = "192.168.113.1"
+    peer_ip  = "192.168.104.1"
     peer_asn = 65000
     my_asn   = 65000
   }

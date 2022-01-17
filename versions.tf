@@ -4,6 +4,7 @@ terraform {
     libvirt = {
       source  = "dmacvicar/libvirt"
       version = "~> 0.6.12"
+      configuration_aliases = [ libvirt.host1,libvirt.host2 ]
     }
   }
 }

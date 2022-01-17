@@ -57,7 +57,9 @@ resource "libvirt_volume" "vm_volume" {
 # Creates virtual machine #
 resource "libvirt_domain" "vm_domain" {
 
+
   # General configuration #
+
   name      = var.vm_name
   vcpu      = var.vm_cpu
   memory    = var.vm_ram * 1024 # GiB -> MiB

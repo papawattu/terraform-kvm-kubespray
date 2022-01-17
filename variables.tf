@@ -13,7 +13,13 @@ variable "action" {
   }
 }
 
-variable "libvirt_provider_uri" {
+variable "libvirt_provider_vm_host1_uri" {
+  type        = string
+  description = "Libvirt provider's URI"
+  default     = "qemu:///system"
+}
+
+variable "libvirt_provider_vm_host2_uri" {
   type        = string
   description = "Libvirt provider's URI"
   default     = "qemu:///system"
@@ -141,6 +147,12 @@ variable "network_dns_list" {
 # HAProxy load balancer VMs parameters
 #======================================================================================
 
+variable "lb_host" {
+  type        = string
+  description = "The default number of vCPU allocated to the HAProxy load balancer"
+  default     = "host1"
+}
+
 variable "lb_default_cpu" {
   type        = number
   description = "The default number of vCPU allocated to the HAProxy load balancer"
@@ -171,7 +183,7 @@ variable "lb_vip" {
   }*/
 }
 
-variable "lb_nodes" {
+variable "lb_nodes_vm_host1" {
   type = list(object({
     id  = number
     mac = string
@@ -187,10 +199,35 @@ variable "lb_nodes" {
 
   validation {
     condition = (
-      alltrue([for node in var.lb_nodes : (node.id >= 0 && node.id <= 200)])
-      && compact(tolist([for node in var.lb_nodes : node.id])) == distinct(compact(tolist([for node in var.lb_nodes : node.id])))
-      && compact(tolist([for node in var.lb_nodes : node.mac])) == distinct(compact(tolist([for node in var.lb_nodes : node.mac])))
-      && compact(tolist([for node in var.lb_nodes : node.ip])) == distinct(compact(tolist([for node in var.lb_nodes : node.ip])))
+      alltrue([for node in var.lb_nodes_vm_host1 : (node.id >= 0 && node.id <= 200)])
+      && compact(tolist([for node in var.lb_nodes_vm_host1 : node.id])) == distinct(compact(tolist([for node in var.lb_nodes_vm_host1 : node.id])))
+      && compact(tolist([for node in var.lb_nodes_vm_host1 : node.mac])) == distinct(compact(tolist([for node in var.lb_nodes_vm_host1 : node.mac])))
+      && compact(tolist([for node in var.lb_nodes_vm_host1 : node.ip])) == distinct(compact(tolist([for node in var.lb_nodes_vm_host1 : node.ip])))
+    )
+    error_message = "HAProxy load balancer nodes configuration is incorrect. Make sure that:\n - every ID is unique and that it's value is between 0 and 200,\n - every MAC and IP address is unique or null."
+  }
+}
+
+variable "lb_nodes_vm_host2" {
+  type = list(object({
+    id  = number
+    mac = string
+    ip  = string
+    # Waiting non-experimental release of optional function #
+    #mac     = optional(string)
+    #ip      = optional(string)
+    #cpu     = optional(number)
+    #ram     = optional(number)
+    #storage = optional(number)
+  }))
+  description = "HAProxy load balancer nodes configuration"
+
+  validation {
+    condition = (
+      alltrue([for node in var.lb_nodes_vm_host2 : (node.id >= 0 && node.id <= 200)])
+      && compact(tolist([for node in var.lb_nodes_vm_host2 : node.id])) == distinct(compact(tolist([for node in var.lb_nodes_vm_host2 : node.id])))
+      && compact(tolist([for node in var.lb_nodes_vm_host2 : node.mac])) == distinct(compact(tolist([for node in var.lb_nodes_vm_host2 : node.mac])))
+      && compact(tolist([for node in var.lb_nodes_vm_host2 : node.ip])) == distinct(compact(tolist([for node in var.lb_nodes_vm_host2 : node.ip])))
     )
     error_message = "HAProxy load balancer nodes configuration is incorrect. Make sure that:\n - every ID is unique and that it's value is between 0 and 200,\n - every MAC and IP address is unique or null."
   }
@@ -218,7 +255,7 @@ variable "master_default_storage" {
   default     = 16
 }
 
-variable "master_nodes" {
+variable "master_nodes_vm_host1" {
   type = list(object({
     id  = number
     mac = string
@@ -234,10 +271,34 @@ variable "master_nodes" {
 
   validation {
     condition = (
-      length(var.master_nodes) % 2 != 0
-      && compact(tolist([for node in var.master_nodes : node.id])) == distinct(compact(tolist([for node in var.master_nodes : node.id])))
-      && compact(tolist([for node in var.master_nodes : node.mac])) == distinct(compact(tolist([for node in var.master_nodes : node.mac])))
-      && compact(tolist([for node in var.master_nodes : node.ip])) == distinct(compact(tolist([for node in var.master_nodes : node.ip])))
+      compact(tolist([for node in var.master_nodes_vm_host1 : node.id])) == distinct(compact(tolist([for node in var.master_nodes_vm_host1 : node.id])))
+      && compact(tolist([for node in var.master_nodes_vm_host1 : node.mac])) == distinct(compact(tolist([for node in var.master_nodes_vm_host1 : node.mac])))
+      && compact(tolist([for node in var.master_nodes_vm_host1 : node.ip])) == distinct(compact(tolist([for node in var.master_nodes_vm_host1 : node.ip])))
+    )
+    error_message = "Master nodes configuration is incorrect. Make sure that: \n - number of master nodes is odd (not divisible by 2),\n - every ID is unique,\n - every MAC and IP address is unique or null."
+  }
+}
+
+variable "master_nodes_vm_host2" {
+  type = list(object({
+    id  = number
+    mac = string
+    ip  = string
+    # Waiting non-experimental release of optional function #
+    #mac     = optional(string)
+    #ip      = optional(string)
+    #cpu     = optional(number)
+    #ram     = optional(number)
+    #storage = optional(number)
+  }))
+  description = "Master nodes configuration"
+
+  validation {
+    condition = (
+#      length(var.master_nodes_vm_host2 + var.master_nodes_vm_host1) % 2 != 0
+      compact(tolist([for node in var.master_nodes_vm_host2 : node.id])) == distinct(compact(tolist([for node in var.master_nodes_vm_host2 : node.id])))
+      && compact(tolist([for node in var.master_nodes_vm_host2 : node.mac])) == distinct(compact(tolist([for node in var.master_nodes_vm_host2 : node.mac])))
+      && compact(tolist([for node in var.master_nodes_vm_host2 : node.ip])) == distinct(compact(tolist([for node in var.master_nodes_vm_host2 : node.ip])))
     )
     error_message = "Master nodes configuration is incorrect. Make sure that: \n - number of master nodes is odd (not divisible by 2),\n - every ID is unique,\n - every MAC and IP address is unique or null."
   }
@@ -271,7 +332,7 @@ variable "worker_node_label" {
   default     = ""
 }
 
-variable "worker_nodes" {
+variable "worker_nodes_vm_host1" {
   type = list(object({
     id  = number
     mac = string
@@ -287,14 +348,37 @@ variable "worker_nodes" {
 
   validation {
     condition = (
-      compact(tolist([for node in var.worker_nodes : node.id])) == distinct(compact(tolist([for node in var.worker_nodes : node.id])))
-      && compact(tolist([for node in var.worker_nodes : node.mac])) == distinct(compact(tolist([for node in var.worker_nodes : node.mac])))
-      && compact(tolist([for node in var.worker_nodes : node.ip])) == distinct(compact(tolist([for node in var.worker_nodes : node.ip])))
+      compact(tolist([for node in var.worker_nodes_vm_host1 : node.id])) == distinct(compact(tolist([for node in var.worker_nodes_vm_host1 : node.id])))
+      && compact(tolist([for node in var.worker_nodes_vm_host1 : node.mac])) == distinct(compact(tolist([for node in var.worker_nodes_vm_host1 : node.mac])))
+      && compact(tolist([for node in var.worker_nodes_vm_host1 : node.ip])) == distinct(compact(tolist([for node in var.worker_nodes_vm_host1 : node.ip])))
     )
     error_message = "Worker nodes configuration is incorrect. Make sure that:\n - every ID is unique,\n - every MAC and IP address is unique or null."
   }
 }
 
+variable "worker_nodes_vm_host2" {
+  type = list(object({
+    id  = number
+    mac = string
+    ip  = string
+    # Waiting non-experimental release of optional function #
+    #mac     = optional(string)
+    #ip      = optional(string)
+    #cpu     = optional(number)
+    #ram     = optional(number)
+    #storage = optional(number)
+  }))
+  description = "Worker nodes configuration"
+
+  validation {
+    condition = (
+      compact(tolist([for node in var.worker_nodes_vm_host2 : node.id])) == distinct(compact(tolist([for node in var.worker_nodes_vm_host2 : node.id])))
+      && compact(tolist([for node in var.worker_nodes_vm_host2 : node.mac])) == distinct(compact(tolist([for node in var.worker_nodes_vm_host2 : node.mac])))
+      && compact(tolist([for node in var.worker_nodes_vm_host2 : node.ip])) == distinct(compact(tolist([for node in var.worker_nodes_vm_host2 : node.ip])))
+    )
+    error_message = "Worker nodes configuration is incorrect. Make sure that:\n - every ID is unique,\n - every MAC and IP address is unique or null."
+  }
+}
 #======================================================================================
 # General Kubernetes configuration
 #======================================================================================
